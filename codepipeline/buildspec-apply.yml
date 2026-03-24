@@ -1,0 +1,44 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+    - apt-get update -y
+    - apt-get install jq -y
+
+  build:
+    commands:
+    - secret=$(aws secretsmanager get-secret-value --secret-id git_local_files_secrets --query SecretString --output text)
+
+    # Gitlab root password
+    - 'jq "{ \"root\": .root }" <<< "$secret" > root.json'
+
+    # SES
+    - 'jq "{ \"access_key\": .ses_access, \"secret_key\": .ses_secret }" <<< "$secret" > ses.json'
+
+    # Runner tokens
+    - 'jq "{ \"token\": .runner_manager_token }" <<< "$secret" > runner_manager_token.json'
+    - 'jq "{ \"token\": .runners_token_amd64 }" <<< "$secret" > runners_token_amd64.json'
+    - 'jq "{ \"token\": .runners_token_arm64 }" <<< "$secret" > runners_token_arm64.json'
+    - 'jq "{ \"token\": .runners_token_amd64_dedicated }" <<< "$secret" > runners_token_amd64_dedicated.json'
+    - 'jq "{ \"token\": .runners_token_arm64_dedicated }" <<< "$secret" > runners_token_arm64_dedicated.json'
+    - 'jq "{ \"token\": .runners_token_amd64_medium }" <<< "$secret" > runners_token_amd64_medium.json'
+    - 'jq "{ \"token\": .runners_token_arm64_medium }" <<< "$secret" > runners_token_arm64_medium.json'
+    - 'jq "{ \"token\": .runners_token_amd64_medium_dedicated }" <<< "$secret" > runners_token_amd64_medium_dedicated.json'
+    - 'jq "{ \"token\": .runners_token_arm64_medium_dedicated }" <<< "$secret" > runners_token_arm64_medium_dedicated.json'
+    - 'jq "{ \"token\": .runners_token_amd64_large }" <<< "$secret" > runners_token_amd64_large.json'
+    - 'jq "{ \"token\": .runners_token_arm64_large }" <<< "$secret" > runners_token_arm64_large.json'
+    - 'jq "{ \"token\": .runners_token_amd64_large_dedicated }" <<< "$secret" > runners_token_amd64_large_dedicated.json'
+    - 'jq "{ \"token\": .runners_token_arm64_large_dedicated }" <<< "$secret" > runners_token_arm64_large_dedicated.json'
+    - 'jq "{ \"token\": .runners_token_arm64_mac }" <<< "$secret" > runners_token_arm64_mac.json'
+
+    # Bitbucket
+    - 'jq "{ \"bitbucket_app_key\": .bitbucket_bitbucket_app_key, \"bitbucket_app_secret\": .bitbucket_bitbucket_app_secret }" <<< "$secret" > bitbucket.json'
+
+    # SSO
+    - 'jq "{ \"idp_cert\": .sso_credentials_idp_cert, \"idp_url\": .sso_credentials_idp_url }" <<< "$secret" > sso_credentials.json'
+
+    # Terraform
+    - terraform init
+    - terraform validate
+    - terraform apply --auto-approve
